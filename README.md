@@ -1,3 +1,3 @@
-### Mètodes Avançats de Processament de Senyal, Imatge i Vídeo
-#Projecte Nª1 : Detecció de matricules
+# Mètodes Avançats de Processament de Senyal, Imatge i Vídeo
+### 1. Detecció de matricules
 
