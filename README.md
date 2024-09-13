@@ -1,2 +1,3 @@
 ### Mètodes Avançats de Processament de Senyal, Imatge i Vídeo
-Projectes de psiv 2 con Mar i Laura
+#Projecte Nª1 : Detecció de matricules
+
