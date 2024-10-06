@@ -1,11 +1,27 @@
 import cv2  # Per al processament d'imatges i contorns
 import os   # Per a la gestió d'arxius i directoris
 from PIL import Image, ImageDraw, ImageFont  # Per a la manipulació d'imatges amb Pillow
+import numpy as np  # Per a la manipulació d'imatges amb NumPy
 
 def crop_plate_numbers(image):
+
+    ## funcio auxiliar per sobreposicions ##
+    def is_inside(contour1, contour2):
+        """ Verifica si contour1 está completamente dentro de contour2 """
+        x1, y1, w1, h1 = cv2.boundingRect(contour1)
+        x2, y2, w2, h2 = cv2.boundingRect(contour2)
+        
+        return (x1 > x2 and y1 > y2 and (x1 + w1) < (x2 + w2) and (y1 + h1) < (y2 + h2))
+    
     if type(image) == str:
         # Carregar imatge des del camí
         image = cv2.imread(image)
+
+    # Resize mntenint aspect ratio
+    ar1 = image.shape[1] / image.shape[0]
+    new_width = 150
+    new_height = int(new_width / ar1)
+    image = cv2.resize(image, (new_width, new_height))
 
     # Convertir imatge a espai HSV
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
@@ -25,39 +41,57 @@ def crop_plate_numbers(image):
     # Trobar els contorns a la imatge binaritzada
     contours, _ = cv2.findContours(binary_image, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
 
+    # Si no es troben minim 7, fem erode per aconseguir més contorns
+    if len(contours) < 7:
+        kernel = np.ones((2, 2), np.uint8)
+        binary_image = cv2.erode(binary_image, kernel, iterations=1)
+        contours, _ = cv2.findContours(binary_image, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+
     # Ordenar els contorns d'esquerra a dreta
     contours = sorted(contours, key=lambda contour: cv2.boundingRect(contour)[0])
 
-    # Establir els llindars per a l'àrea dels contorns
-    area_min = 400
-    area_max = 900
+    # Establir els llindars per Heigh i Width
+    w_min = 10
+    w_max = 30
+    h_min = 18
+    h_max = 40
 
     # Llista per a emmagatzemar els retalls dels números/lletres
     digits = []
 
-    # Dibuixar un rectangle sobre cada contorn i guardar els retalls
+    # Filtrem els contorns per aconseguir els números/lletres
+    flt_contours = []
     for contour in contours:
         # Obtenir les coordenades del rectangle que envolta el contorn
         x, y, w, h = cv2.boundingRect(contour)
-        area = cv2.contourArea(contour)
-
         # Filtrar per àrea (massa petit o massa gran)
-        if area_min < area < area_max:
+        if w_min < w < w_max and h_min < h < h_max:
             # Filtrar contorns que toquen les vores (posició en els 0)
             if x > 0 and y > 0 and (x + w) < gray_image.shape[1] and (y + h) < gray_image.shape[0]:
-                # Retallar el contorn (número o lletra)
-                digit = gray_image[y:y + h, x:x + w]
-                digits.append(digit)
+                flt_contours.append(contour)
+
+    # Filtrem contorns sobreposats
+    # Eliminar contornos sobre otros contornos
+    for cnt in flt_contours:
+        for cnt2 in flt_contours:
+            if cnt is not cnt2 and is_inside(cnt, cnt2):
+                flt_contours.remove(cnt)
+
+    # Dibujar un rectángulo sobre cada contorno
+    for contour in flt_contours:
+        # Retallar el contorn (número o lletra)
+        x, y, w, h = cv2.boundingRect(contour)
+        digit = gray_image[y:y + h, x:x + w]
+        # Normalizar los pixeles de los dígitos aumentando el contrast
+        final_dig = cv2.normalize(digit, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
+
+        digits.append(final_dig)
+
+
 
     return digits
 
-import cv2
-import numpy as np
-
-import cv2
-import numpy as np
-
-def resize_with_padding(image, size=(40, 64)):
+def resize_with_padding(image, size=(15, 31)):
     """Redimensionar la imatge en format OpenCV a una mida específica amb farcit."""
     # Obtenir dimensions originals
     h_orig, w_orig = image.shape[:2]
