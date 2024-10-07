@@ -4,13 +4,7 @@ from matplotlib import pyplot as plt
 import torch
 
 
-def crop_matricula(img_path):
-
-    # Cargar el modelo YOLOv5 desde el archivo best.pt
-    model = torch.hub.load('yolov5', 'custom', path='yolov5/runs/train/exp/weights/best.pt', source='local',force_reload=True)
-
-    image_path = 'img_exemple\matricula_exemple.jpg'
-
+def crop_matricula(img_path, model):
     img = cv2.imread(img_path)
 
     res = model(img_path)

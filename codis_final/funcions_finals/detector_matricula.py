@@ -16,6 +16,7 @@ from ultralytics import YOLO
 
 def init_models():
     # Inicializar los modelos
+    model_yolo = torch.hub.load('yolov5', 'custom', path='yolov5/runs/train/exp/weights/best.pt', source='local',force_reload=True)
     model_alfa = CNNModel_a()
     model_num = CNNModel_n()
 
@@ -27,12 +28,12 @@ def init_models():
     model_alfa.eval()
     model_num.eval()
 
-    return model_alfa, model_num
+    return model_yolo, model_alfa, model_num
 
-def detect_matricula(img_path):
+def detect_matricula(img_path, model_yolo, model_alfa, model_num):
 
     # 1. CROP MATRICULA
-    cropped_m = crop_matricula(img_path)
+    cropped_m = crop_matricula(img_path, model_yolo)
 
     # 2. MATRICULA TO DIGITS
     digits = matricula_to_digits(cropped_m)
@@ -40,7 +41,6 @@ def detect_matricula(img_path):
     alfa_digits = digits[4:7]
 
     # 3. PREDICT DIGITS
-    model_alfa, model_num = init_models()
     num_preds, alfa_preds = predict_digits(num_digits, alfa_digits,model_num,model_alfa)
 
     return num_preds, alfa_preds

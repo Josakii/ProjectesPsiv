@@ -3,16 +3,86 @@ import os   # Per a la gestió d'arxius i directoris
 from PIL import Image, ImageDraw, ImageFont  # Per a la manipulació d'imatges amb Pillow
 import numpy as np  # Per a la manipulació d'imatges amb NumPy
 
-def crop_plate_numbers(image):
-
-    ## funcio auxiliar per sobreposicions ##
-    def is_inside(contour1, contour2):
-        """ Verifica si contour1 está completamente dentro de contour2 """
-        x1, y1, w1, h1 = cv2.boundingRect(contour1)
-        x2, y2, w2, h2 = cv2.boundingRect(contour2)
-        
-        return (x1 > x2 and y1 > y2 and (x1 + w1) < (x2 + w2) and (y1 + h1) < (y2 + h2))
+## funcio auxiliar per sobreposicions ##
+def is_inside(contour1, contour2):
+    """ Verifica si contour1 está completamente dentro de contour2 """
+    x1, y1, w1, h1 = cv2.boundingRect(contour1)
+    x2, y2, w2, h2 = cv2.boundingRect(contour2)
     
+    return (x1 > x2 and y1 > y2 and (x1 + w1) < (x2 + w2) and (y1 + h1) < (y2 + h2))
+
+def find_contours_mat(binary_image):
+    # Encontrar contornos en la imagen binarizada
+    contours_letters, _ = cv2.findContours(binary_image, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+
+    # Limites Width y Height
+    w_min = 5
+    w_max = 32
+    h_min = 12
+    h_max = 40
+
+    filt_contours = []
+    # Dibujar un rectángulo sobre cada contorno
+    for contour in contours_letters:
+        # # Obtener las coordenadas del rectángulo que encierra el contorno
+        x, y, w, h = cv2.boundingRect(contour)
+        # print(x,y,w,h)
+        # cv2.rectangle(image_cp2, (x, y), (x + w, y + h), (0, 255, 0), 2)  # Verde, grosor 2
+        # plt.imshow(cv2.cvtColor(image_cp2, cv2.COLOR_BGR2RGB))
+        # plt.axis('off')  # Opcional: para ocultar los ejes
+        # plt.show()
+        if w_min < w < w_max and h_min < h < h_max:
+            # Filtrar contornos que tocan los bordes (posición en los 0)
+            if x > 0 and y > 0 and (x + w) < binary_image.shape[1] and (y + h) < binary_image.shape[0]:
+                filt_contours.append(contour)
+
+    # Crear una lista de contornos a eliminar
+    contours_to_remove = set()
+
+    # Eliminar contornos sobrepuestos y duplicados
+    for i, cnt in enumerate(filt_contours):
+        # Si el índice de cnt ya está marcado para eliminar, se salta
+        if i in contours_to_remove:
+            continue
+        
+        for j, cnt2 in enumerate(filt_contours):
+            if i != j:
+                # Si el índice de cnt2 ya está marcado para eliminar, se salta
+                if j in contours_to_remove:
+                    continue
+                
+                b = is_inside(cnt, cnt2)
+                x1, y1, w1, h1 = cv2.boundingRect(cnt)
+                x2, y2, w2, h2 = cv2.boundingRect(cnt2)
+
+                # Verificar si son iguales o si uno está dentro del otro
+                if (x1 == x2 and y1 == y2 and w1 == w2 and h1 == h2) or b:
+                    contours_to_remove.add(i)  # Añadir índice de cnt a eliminar
+                    break  # No es necesario seguir iterando sobre cnt2
+
+    # Filtrar contornos que no están en contours_to_remove
+    filt_contours = [cnt for i, cnt in enumerate(filt_contours) if i not in contours_to_remove]
+
+    return filt_contours
+
+def delete_shadows(image_param):
+    imagecpy = image_param.copy()
+    # Convertir la imagen a escala de grises (opcional)
+    gray_image = cv2.cvtColor(imagecpy, cv2.COLOR_BGR2GRAY)
+
+    # Crear una máscara de los píxeles superiores a 230
+    # La máscara tendrá valores 255 donde la condición es verdadera y 0 donde es falsa
+    mask = gray_image < 70
+
+    # Convertir la máscara a tipo uint8
+    mask = mask.astype(np.uint8) * 255  # Multiplicamos por 255 para tener valores de 0 o 255
+
+    # Aplicar la máscara a la imagen original
+    result = cv2.bitwise_and(imagecpy, imagecpy, mask=mask)
+
+    return result
+
+def crop_plate_numbers(image):
     if type(image) == str:
         # Carregar imatge des del camí
         image = cv2.imread(image)
@@ -22,6 +92,9 @@ def crop_plate_numbers(image):
     new_width = 150
     new_height = int(new_width / ar1)
     image = cv2.resize(image, (new_width, new_height))
+
+    # # delete shadows
+    # image = delete_shadows(image)
 
     # Convertir imatge a espai HSV
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
@@ -38,45 +111,48 @@ def crop_plate_numbers(image):
     # Convertir la imatge a escala de grisos
     gray_image = cv2.cvtColor(gray_image, cv2.COLOR_BGR2GRAY)
 
-    # Trobar els contorns a la imatge binaritzada
-    contours, _ = cv2.findContours(binary_image, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+    n_intents = 3
+    for i in range(n_intents):
+        
+        # 1. Si es el primer intent, fem trobar contorns
+        if i == 0:
+            print('Intent 1')
+            flt_contours = find_contours_mat(binary_image)
 
-    # Si no es troben minim 7, fem erode per aconseguir més contorns
-    if len(contours) < 7:
-        kernel = np.ones((2, 2), np.uint8)
-        binary_image = cv2.erode(binary_image, kernel, iterations=1)
-        contours, _ = cv2.findContours(binary_image, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+        # 2. Si es el 2n intent, fem dilate + erode
+        if i == 1:
+            print('Intent 2')
+            bin_cp = binary_image.copy()
+            kernel = np.ones((2, 2), np.uint8)
+            bin_cp = cv2.dilate(bin_cp, kernel, iterations=1)
+            bin_cp = cv2.erode(bin_cp, kernel, iterations=1)
 
-    # Ordenar els contorns d'esquerra a dreta
-    contours = sorted(contours, key=lambda contour: cv2.boundingRect(contour)[0])
+            # # save to tmp folder
+            # cv2.imwrite('tmp/bin_ed1.jpg', bin_cp)
 
-    # Establir els llindars per Heigh i Width
-    w_min = 10
-    w_max = 30
-    h_min = 18
-    h_max = 40
+            flt_contours = find_contours_mat(bin_cp)
 
-    # Llista per a emmagatzemar els retalls dels números/lletres
+        # 3. Si es el 3r intent, fem canny edge
+        if i == 2:
+            bin_cp = binary_image.copy()
+            print('Intent 3')
+            # # Convertir imagen a escala de grises
+            # gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+            # Aplicar un filtro de mediana para eliminar ruido
+            gray = cv2.medianBlur(bin_cp, 3)
+
+            # Aplicar el detector de bordes Canny
+            edges = cv2.Canny(gray, 50, 150)
+
+            # Encontrar contornos en la imagen binarizada
+            flt_contours = find_contours_mat(edges)
+
+
+        if len(flt_contours) == 7:
+            break
+
     digits = []
-
-    # Filtrem els contorns per aconseguir els números/lletres
-    flt_contours = []
-    for contour in contours:
-        # Obtenir les coordenades del rectangle que envolta el contorn
-        x, y, w, h = cv2.boundingRect(contour)
-        # Filtrar per àrea (massa petit o massa gran)
-        if w_min < w < w_max and h_min < h < h_max:
-            # Filtrar contorns que toquen les vores (posició en els 0)
-            if x > 0 and y > 0 and (x + w) < gray_image.shape[1] and (y + h) < gray_image.shape[0]:
-                flt_contours.append(contour)
-
-    # Filtrem contorns sobreposats
-    # Eliminar contornos sobre otros contornos
-    for cnt in flt_contours:
-        for cnt2 in flt_contours:
-            if cnt is not cnt2 and is_inside(cnt, cnt2):
-                flt_contours.remove(cnt)
-
     # Dibujar un rectángulo sobre cada contorno
     for contour in flt_contours:
         # Retallar el contorn (número o lletra)
@@ -86,8 +162,6 @@ def crop_plate_numbers(image):
         final_dig = cv2.normalize(digit, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
 
         digits.append(final_dig)
-
-
 
     return digits
 
