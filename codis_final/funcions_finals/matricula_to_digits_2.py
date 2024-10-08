@@ -11,15 +11,15 @@ def is_inside(contour1, contour2):
     
     return (x1 > x2 and y1 > y2 and (x1 + w1) < (x2 + w2) and (y1 + h1) < (y2 + h2))
 
-def find_contours_mat(binary_image):
+def find_contours_mat(binary_image, w_min = 5, w_max = 32, h_min = 10, h_max = 45):
     # Encontrar contornos en la imagen binarizada
     contours_letters, _ = cv2.findContours(binary_image, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
 
     # Limites Width y Height
-    w_min = 5
-    w_max = 32
-    h_min = 12
-    h_max = 40
+    # w_min = 5
+    # w_max = 32
+    # h_min = 12
+    # h_max = 45
 
     filt_contours = []
     # Dibujar un rectángulo sobre cada contorno
@@ -33,7 +33,7 @@ def find_contours_mat(binary_image):
         # plt.show()
         if w_min < w < w_max and h_min < h < h_max:
             # Filtrar contornos que tocan los bordes (posición en los 0)
-            if x > 0 and y > 0 and (x + w) < binary_image.shape[1] and (y + h) < binary_image.shape[0]:
+            # if x > 0 and y > 0 and (x + w) < binary_image.shape[1] and (y + h) < binary_image.shape[0]:
                 filt_contours.append(contour)
 
     # Crear una lista de contornos a eliminar
@@ -111,7 +111,7 @@ def crop_plate_numbers(image):
     # Convertir la imatge a escala de grisos
     gray_image = cv2.cvtColor(gray_image, cv2.COLOR_BGR2GRAY)
 
-    n_intents = 3
+    n_intents = 5
     for i in range(n_intents):
         
         # 1. Si es el primer intent, fem trobar contorns
@@ -147,6 +147,24 @@ def crop_plate_numbers(image):
 
             # Encontrar contornos en la imagen binarizada
             flt_contours = find_contours_mat(edges)
+
+        # 4. Si es el 4t intent, ampliamos el rang de h
+        if i == 3:
+            bin_cp = binary_image.copy()
+            print('Intent 4')
+
+            # ampliem rang h
+            flt_contours = find_contours_mat(bin_cp, w_min = 5, w_max = 30, h_min = 40, h_max = 80)
+            print(len(flt_contours))
+
+        # 5. Si es el 5è intent, ampliamos el rang de w
+        if i == 4:
+            bin_cp = binary_image.copy()
+            print('Intent 5')
+
+            # ampliem rang w
+            flt_contours = find_contours_mat(bin_cp, w_min=5, w_max=80, h_min=15, h_max=45)
+
 
 
         if len(flt_contours) == 7:
