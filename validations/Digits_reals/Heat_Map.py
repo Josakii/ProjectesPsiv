@@ -29,7 +29,7 @@ success_data = {
     'W': (2, []),
     'X': (6, [12]),
     'Y': (5, []),
-    'Z': (6, [24, 24, 24, 8, 24, 24, 21, 19])
+    'Z': (5, [])
 }
 
 # Añadir los valores de éxito a la diagonal y repartir fallos
