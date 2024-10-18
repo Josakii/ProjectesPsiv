@@ -58,8 +58,8 @@ def unzip_file(zip_path, extract_to):
         zip_ref.extractall(extract_to)
 
 def main():
-    zip_path = 'C:/Users/Josep/Desktop/Nueva carpeta/ProjectesPsiv-1/validations/Letters_CNN/results_CMF_CNN_Letters.zip'  # Cambia esto a la ruta de tu archivo zip
-    extract_to = 'validations/Letters_CNN'  # Carpeta donde se descomprimirán los archivos
+    zip_path = 'C:/Users/Josep/Desktop/Nueva carpeta/ProjectesPsiv-1/validations/Letters_CNN/results_CFM_CCN_Letters.zip'
+    extract_to = 'C:/Users/Josep/Desktop/Nueva carpeta/ProjectesPsiv-1/validations/Letters_CNN/'  
     output_file = 'resultats.xlsx'
     
     # Descomprimir el archivo ZIP
