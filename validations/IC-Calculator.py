@@ -18,15 +18,25 @@ def read_txt_files(directory):
             file_path = os.path.join(directory, filename)
             with open(file_path, 'r') as file:
                 lines = file.readlines()
-                # Extraer los valores de TP, FP, FN, TN
-                tp = int(lines[0].split(': ')[1])
-                fp = int(lines[1].split(': ')[1])
-                fn = int(lines[2].split(': ')[1])
-                tn = int(lines[3].split(': ')[1])
                 
-                # Calcular accuracy
-                accuracy = calculate_metrics(tp, fp, fn, tn)
-                data.append((filename, tp, fp, fn, tn, accuracy))
+                # Verificar que el archivo tiene al menos 4 líneas
+                if len(lines) < 4:
+                    print(f"El archivo {filename} no tiene suficientes líneas. Se omitirá.")
+                    continue
+                
+                try:
+                    # Extraer los valores de TP, FP, FN, TN
+                    tp = int(lines[0].split(': ')[1])
+                    fp = int(lines[1].split(': ')[1])
+                    fn = int(lines[2].split(': ')[1])
+                    tn = int(lines[3].split(': ')[1])
+                    
+                    # Calcular accuracy
+                    accuracy = calculate_metrics(tp, fp, fn, tn)
+                    data.append((filename, tp, fp, fn, tn, accuracy))
+                    print(data)
+                except (ValueError, IndexError) as e:
+                    print(f"Error al procesar el archivo {filename}: {e}. Se omitirá.")
     
     return data
 
