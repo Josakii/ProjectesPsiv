@@ -14,15 +14,15 @@ import torch.nn.functional as F
 from ultralytics import YOLO
 
 
-def init_models():
+def init_models(path_num, path_alfa):
     # Inicializar los modelos
     model_yolo = torch.hub.load('yolov5', 'custom', path='yolov5/runs/train/exp/weights/best.pt', source='local',force_reload=True)
     model_alfa = CNNModel_a()
     model_num = CNNModel_n()
 
     # Cargar los estados de los modelos
-    model_alfa.load_state_dict(torch.load("models/CNN1-alfa.pt"))
-    model_num.load_state_dict(torch.load("models/CNN1-numeros.pt"))
+    model_alfa.load_state_dict(torch.load(path_alfa))
+    model_num.load_state_dict(torch.load(path_num))
 
     # Cambiar a modo de evaluación
     model_alfa.eval()
