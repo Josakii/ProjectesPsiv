@@ -39,7 +39,7 @@ class CNNModel_n(nn.Module):
 
 # Model alfabètic
 class CNNModel_a(nn.Module):
-    def __init__(self):
+    def __init__(self,p=26):
         super(CNNModel_a, self).__init__()
 
         # Definir las capas convolucionales y de agrupamiento
@@ -55,7 +55,7 @@ class CNNModel_a(nn.Module):
         # Ajustar la capa fully connected para 26 clases
         self.fc1 = nn.Linear(128 * 8 * 5, 128)  # Capa densa
         self.dropout = nn.Dropout(0.5)  # Dropout para regularización
-        self.fc2 = nn.Linear(128, 26)  # Capa de salida ajustada a 26 clases
+        self.fc2 = nn.Linear(128, p)  # Capa de salida ajustada a 26 clases (puede ser para p=21 en algunos modelos)
 
     def forward(self, x):
         # Definir el paso hacia adelante
@@ -81,7 +81,7 @@ def predecir_imagen(model, image):
     
     # Aplicar las transformaciones
 
-    resized_img = cv2.resize(img, (40, 64))  # (ancho, alto)
+    resized_img = cv2.resize(img, (34, 80))  # (ancho, alto)
     img_tensor = torch.tensor(resized_img, dtype=torch.float32)  # Crear tensor
     img_tensor = img_tensor.unsqueeze(0)  # Añadir dimensión de canal
     img_tensor = img_tensor / 255.0  # Normalizar entre 0 y 1
@@ -102,7 +102,11 @@ def predecir_imagen(model, image):
     return predicted.item()
     
 
-def predict_digits(digits_num,digits_alfa,model_num,model_alfa):
+def predict_digits(digits,model_num,model_alfa):
+
+    # separate numbers and letters
+    digits_alfa = digits[:3]
+    digits_num = digits[3:]
 
     # Predict numeric
     numeric_preds = []
@@ -117,4 +121,13 @@ def predict_digits(digits_num,digits_alfa,model_num,model_alfa):
         predicted_letter = chr(pred + ord('A'))
         alfa_preds.append(predicted_letter)
 
-    return numeric_preds, alfa_preds
+    # Get full string
+    full_str = ''
+    for i in range(4):
+        full_str += str(numeric_preds[3-i])
+
+    for i in range(3):
+        full_str += alfa_preds[2-i]
+
+
+    return numeric_preds, alfa_preds, full_str
