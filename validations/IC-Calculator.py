@@ -80,8 +80,8 @@ def unzip_file(zip_path, extract_to):
         zip_ref.extractall(extract_to)
 
 def main():
-    zip_path = 'C:/Users/Josep/Desktop/Nueva carpeta/ProjectesPsiv-1/validations/Numbers_SVM/results_CM_SVM_Numbers.zip'
-    extract_to = 'C:/Users/Josep/Desktop/Nueva carpeta/ProjectesPsiv-1/validations/Numbers_SVM'  
+    zip_path = 'C:/Users/Josep/Desktop/Nueva carpeta/ProjectesPsiv-1/validations/Letters_SVM/results_CFM_SVM_Letters.zip'
+    extract_to = 'C:/Users/Josep/Desktop/Nueva carpeta/ProjectesPsiv-1/validations/Letters_SVM'  
     output_file = 'resultats.xlsx'
     
     # Descomprimir el archivo ZIP
