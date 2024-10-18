@@ -10,9 +10,8 @@ def calculate_metrics(tp, fp, fn, tn):
     return accuracy
 
 def read_txt_files(directory):
-    data = []
-    
-    # Leer todos los archivos .txt en el directorio especificado
+    data=[]
+        # Leer todos los archivos .txt en el directorio especificado
     for filename in os.listdir(directory):
         if filename.endswith('.txt'):
             file_path = os.path.join(directory, filename)
@@ -26,10 +25,10 @@ def read_txt_files(directory):
                 
                 try:
                     # Extraer los valores de TP, FP, FN, TN
-                    tp = int(lines[0].split(': ')[1])
-                    fp = int(lines[1].split(': ')[1])
-                    fn = int(lines[2].split(': ')[1])
-                    tn = int(lines[3].split(': ')[1])
+                    tp = int(lines[1].split(': ')[1])  # Cambia el índice a 1 para TP
+                    fp = int(lines[2].split(': ')[1])  # Cambia el índice a 2 para FP
+                    fn = int(lines[3].split(': ')[1])  # Cambia el índice a 3 para FN
+                    tn = int(lines[4].split(': ')[1])  # Cambia el índice a 4 para TN
                     
                     # Calcular accuracy
                     accuracy = calculate_metrics(tp, fp, fn, tn)
@@ -58,7 +57,7 @@ def unzip_file(zip_path, extract_to):
         zip_ref.extractall(extract_to)
 
 def main():
-    zip_path = 'C:/Users/Josep/Desktop/Nueva carpeta/ProjectesPsiv-1/validations/Letters_CNN/results_CFM_CCN_Letters.zip'
+    zip_path = 'C:/Users/Josep/Desktop/Nueva carpeta/ProjectesPsiv-1/validations/Letters_CNN/results_CMF_CNN_Letters.zip'
     extract_to = 'C:/Users/Josep/Desktop/Nueva carpeta/ProjectesPsiv-1/validations/Letters_CNN/'  
     output_file = 'resultats.xlsx'
     
